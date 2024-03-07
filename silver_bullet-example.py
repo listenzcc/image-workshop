@@ -25,7 +25,7 @@ from threading import Thread
 
 from silver_bullet import AttrDict
 from silver_bullet.shoot import WhoAmI
-from silver_bullet.image import image2bytes, bytes2image
+from silver_bullet.image import image_to_bytes, bytes_to_image
 from silver_bullet.web_io import serve_forever, WebsocketClient
 
 
@@ -39,21 +39,28 @@ if __name__ == '__main__':
     # --------------------
     wai = WhoAmI()
     image = Image.open('./NSD/shared1000/shared0001_nsd02951.png')
+    image = Image.open(
+        './ImageNet/data/val/n01440764/ILSVRC2012_val_00000293.JPEG')
     print(image)
-    encoded = image2bytes(image)
+    encoded = image_to_bytes(image)
     print(type(encoded))
-    img = bytes2image(encoded)
+    img = bytes_to_image(encoded)
     print(img)
 
     # --------------------
-    Thread(target=asyncio.run, args=(serve_forever(),), daemon=True).start()
+    # Goes with the process
+    # Thread(target=asyncio.run, args=(serve_forever(),), daemon=True).start()
+
+    # --------------------
+    # Block the process
     # asyncio.run(serve_forever())
 
-    wc = WebsocketClient()
+    wc = WebsocketClient(host='localhost', port=23401)
 
-    # mass = AttrDict(msg=encoded, recv=None)
-    # print(asyncio.run(wc.get(mass)))
-    # print(mass)
+    mass = AttrDict(msg=image, recv=None, require_image=True)
+    print(asyncio.run(wc.get(mass)))
+    print(mass)
+    mass.recv.save('a.jpg')
 
     inp = ''
     while inp != 'q':

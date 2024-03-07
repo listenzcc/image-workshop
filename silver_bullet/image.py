@@ -33,7 +33,41 @@ from . import logger
 # Function and class
 
 
-def image2bytes(image: Image, format: str = 'JPEG') -> bytes:
+def check_is_image(image: Image):
+    """
+    Checks if the given object is an instance of the Image class.
+
+    Args:
+        image: The object to be checked.
+
+    Returns:
+        bool: True if the object is an instance of Image, False otherwise.
+    """
+
+    return isinstance(image, Image.Image)
+
+
+def image_to_bytes(image: Image, format: str = 'JPEG') -> bytes:
+    """
+    Encodes an image to bytes using the specified format.
+
+    Args:
+        image: The image to be encoded.
+        format: The format to use for encoding the image. Defaults to 'JPEG'.
+
+    Returns:
+        bytes: The encoded image as bytes.
+
+    Examples:
+        >>> image = Image.open('image.jpg')
+        >>> encoded_image = image2bytes(image, format='PNG')
+    """
+
+    if not check_is_image(image):
+        msg = f'Image is required, but get {type(image)}'
+        logger.error(msg)
+        raise ValueError(msg)
+
     buffered = io.BytesIO()
     image.save(buffered, format=format)
     encoded = base64.b64encode(buffered.getvalue())
@@ -42,7 +76,20 @@ def image2bytes(image: Image, format: str = 'JPEG') -> bytes:
     return encoded
 
 
-def bytes2image(encoded: bytes, format: str = 'JPEG') -> Image:
+def bytes_to_image(encoded: bytes) -> Image:
+    """
+    Decodes bytes to an image.
+
+    Args:
+        encoded: The encoded image as bytes.
+
+    Returns:
+        Image: The decoded image.
+
+    Raises:
+        N/A
+    """
+
     img_str = io.BytesIO(base64.b64decode(encoded))
     image = Image.open(img_str)
     logger.debug(f'Decoded image: {image}')
