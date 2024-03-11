@@ -48,23 +48,40 @@ if __name__ == '__main__':
     print(img)
 
     # --------------------
-    # Goes with the process
+    # Goes along with the process
     # Thread(target=asyncio.run, args=(serve_forever(),), daemon=True).start()
 
-    # --------------------
-    # Block the process
+    # or Block the process
     # asyncio.run(serve_forever())
 
     wc = WebsocketClient(host='localhost', port=23401)
 
+    # --------------------
     mass = AttrDict(msg=image, recv=None, require_image=True)
+    mass1 = AttrDict(msg=image, recv=None, require_image=True)
+
+    # --------------------
+    # ! Block the process
     print(asyncio.run(wc.get(mass)))
     print(mass)
     mass.recv.save('a.jpg')
 
-    inp = ''
-    while inp != 'q':
+    # --------------------
+    # ! Run in background, the thread will wait the wc.get
+    Thread(target=asyncio.run, args=(wc.get(mass), ), daemon=True).start()
+    Thread(target=asyncio.run, args=(wc.get(mass1), ), daemon=True).start()
+    print(mass1, mass)
+
+    while True:
         inp = input('>> ')
+        if inp == 'q':
+            break
+
+        print(mass1, mass)
+
+        if inp == '':
+            continue
+
         mass = AttrDict(msg=inp.encode(), recv=None)
         print(asyncio.run(wc.get(mass)))
         print(mass)

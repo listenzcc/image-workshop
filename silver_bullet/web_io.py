@@ -131,7 +131,7 @@ class WebsocketClient(object):
                 recv = bytes_to_image(recv)
 
             mass.recv = recv
-            mass.cost_time = time.perf_counter() - tic
+            mass.cost_secs = time.perf_counter() - tic
             return recv
 
 
