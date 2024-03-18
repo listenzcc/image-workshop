@@ -23,6 +23,8 @@ from PIL import Image
 from pathlib import Path
 from threading import Thread
 
+from copy import deepcopy
+
 from silver_bullet import AttrDict
 from silver_bullet.shoot import WhoAmI
 from silver_bullet.image import image_to_bytes, bytes_to_image
@@ -54,37 +56,67 @@ if __name__ == '__main__':
     # or Block the process
     # asyncio.run(serve_forever())
 
+    # --------------------
+    # Make the WebsocketClient
     wc = WebsocketClient(host='localhost', port=23401)
 
     # --------------------
+    # Make the mass, the input to the remote websocket server
     mass = AttrDict(msg=image, recv=None, require_image=True)
+    mass0 = AttrDict(msg=image, recv=None, require_image=True)
     mass1 = AttrDict(msg=image, recv=None, require_image=True)
 
     # --------------------
     # ! Block the process
-    print(asyncio.run(wc.get(mass)))
-    print(mass)
-    mass.recv.save('a.jpg')
+    # print(asyncio.run(wc.get(mass)))
+    # print(mass)
+    # mass.recv.save('recv.jpg')
 
     # --------------------
     # ! Run in background, the thread will wait the wc.get
-    Thread(target=asyncio.run, args=(wc.get(mass), ), daemon=True).start()
-    Thread(target=asyncio.run, args=(wc.get(mass1), ), daemon=True).start()
+    # Thread(target=asyncio.run, args=(wc.get(mass), ), daemon=True).start()
+    # Thread(target=asyncio.run, args=(wc.get(mass1), ), daemon=True).start()
     print(mass1, mass)
+
+    # --------------------
+    help_msg = '''
+Empty message is not allowed.
+Known inputs are:
+- q: Quit the app;
+- e: Use the example;
+...
+    '''
+
+    # async def go(mass):
+    #     wc.get(mass)
 
     while True:
         inp = input('>> ')
         if inp == 'q':
             break
 
-        print(mass1, mass)
-
         if inp == '':
+            print(help_msg)
             continue
 
-        mass = AttrDict(msg=inp.encode(), recv=None)
-        print(asyncio.run(wc.get(mass)))
-        print(mass)
+        if inp == 'e':
+            _mass = deepcopy(mass0)
+            print(_mass, type(_mass))
+        else:
+            _mass = AttrDict(msg=inp.encode(), recv=None)
+        # print(f'Start getting data {asyncio.run(wc.get(mass))}')
+
+        # Use the existing loop
+        loop = asyncio.get_event_loop()
+
+        # or, Create a new loop
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
+
+        tasks = asyncio.gather(*[wc.get(_mass)], return_exceptions=True)
+        print(loop.run_until_complete(tasks))
+
+        print(f'Got: {_mass}')
 
 
 # %% ---- 2024-03-06 ------------------------

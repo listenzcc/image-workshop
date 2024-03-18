@@ -1,3 +1,9 @@
+# Known ignoreable cases
 __pycache__
-private
 *.log
+
+# Private or secret information
+private
+
+# Known very large folders
+BoostingMonocularDepth
