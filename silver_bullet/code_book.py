@@ -32,6 +32,14 @@ monocular_depth_websocket_server = AttrDict(
     url='https://yaksoy.github.io/highresdepth/'
 )
 
+informative_drawings_websocket_server = AttrDict(
+    host='localhost',
+    port=23402,
+    processing='image-to-image',
+    title='Informative Drawings: Learning to generate line drawings that convey geometry and semantics',
+    url='https://github.com/carolineec/informative-drawings'
+)
+
 # %% ---- 2024-03-07 ------------------------
 # Play ground
 

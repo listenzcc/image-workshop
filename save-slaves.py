@@ -24,9 +24,7 @@ from tqdm.auto import tqdm
 
 # --------------------
 pwd = Path(__file__).parent
-slaves_folders = [
-    pwd.joinpath('BoostingMonocularDepth')
-]
+slaves_folder = pwd.joinpath('slaves')
 saved_folder = pwd.joinpath('saved-slaves')
 
 # %% ---- 2024-04-12 ------------------------
@@ -35,17 +33,27 @@ saved_folder = pwd.joinpath('saved-slaves')
 
 def save_slave(folder: Path):
     src_path = folder.joinpath('run-server.py')
-    assert src_path.is_file(), f'Invalid slave directory: {folder}'
+
+    if not src_path:
+        print(f'Invalid slave directory: {src_path}')
+        return
 
     dst_path = saved_folder.joinpath(folder.name, 'run-server.py')
     dst_path.parent.mkdir(exist_ok=True, parents=True)
     shutil.copyfile(src=src_path, dst=dst_path)
+    print('\n'.join([
+        'Copy file:',
+        f'- src: {src_path}',
+        f'- dst: {dst_path}',
+    ]))
+    return
 
 
 # %% ---- 2024-04-12 ------------------------
 # Play ground
 if __name__ == '__main__':
-    for folder in tqdm(slaves_folders, 'Save slaves'):
+    for folder in tqdm([e for e in slaves_folder.iterdir() if e.is_dir()], 'Save slaves'):
+        print(f'---- Found slave: {folder.name} ----')
         save_slave(folder)
 
 
