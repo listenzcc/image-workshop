@@ -4,6 +4,7 @@ __pycache__
 
 # Private or secret information
 private
+flagged
 
 # Known very large folders
 slaves
