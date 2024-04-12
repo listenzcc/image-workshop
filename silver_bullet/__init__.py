@@ -30,7 +30,7 @@ class AttrDict(dict):
         try:
             return self.__getitem__(key)
         except:
-            raise AttributeError()
+            raise AttributeError(f'Invalid attribute: .{key}')
 
     def __setattr__(self, key, value):
         return self.__setitem__(key, value)
@@ -38,7 +38,7 @@ class AttrDict(dict):
 
 # %% ---- 2024-03-06 ------------------------
 # Play ground
-logger.add('log/silver-bullet.log', rotation='1 MB')
+logger.add('log/silver-bullet.log', rotation='5MB')
 
 
 # %% ---- 2024-03-06 ------------------------
