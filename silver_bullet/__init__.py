@@ -18,7 +18,6 @@ Functions:
 
 # %% ---- 2024-03-06 ------------------------
 # Requirements and constants
-from datetime import datetime
 from loguru import logger
 
 
