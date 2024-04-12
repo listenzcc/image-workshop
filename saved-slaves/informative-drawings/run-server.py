@@ -1,23 +1,35 @@
-#!/usr/bin/python3
-
+# %%
+# Module import
+import io
 import os
+import cv2
+import sys
+import time
+import torch
+import base64
+import asyncio
 import warnings
 import argparse
+import threading
+import websockets
+import contextlib
 import numpy as np
-from PIL import Image
-
-import torch
 import torchvision.transforms as transforms
 
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from torchvision.utils import save_image
-from torchvision.utils import make_grid, _log_api_usage_once
+from PIL import Image
+from pathlib import Path
+from torchvision.utils import make_grid
+from loguru import logger
 
-from dataset import UnpairedDepthDataset
+# Local import
 from model import Generator, GlobalGenerator2, InceptionV3
 from base_dataset import get_params, get_transform
 
+sys.path.append(Path(__file__).parent.parent.parent.as_posix())  # noqa
+print(sys.path)  # noqa
+from slaves.util.task_manager import TaskManager
+
+# --------------------
 opt = argparse.Namespace(
     name='opensketch_style',
     checkpoints_dir='checkpoints',
@@ -109,10 +121,11 @@ with torch.no_grad():
         # Add 0.5 after unnormalizing to [0, 255] to round to the nearest integer
         ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(
             1, 2, 0).to("cpu", torch.uint8).numpy()
-        image = Image.fromarray(ndarr)
-        return image
+        return Image.fromarray(ndarr)
 
     def process_image(image: Image, opt: argparse.Namespace):
+        image_size = image.size
+
         img_r = image.convert('RGB')
         transform_params = get_params(opt, img_r.size)
 
@@ -127,27 +140,90 @@ with torch.no_grad():
 
         img_r = A_transform(img_r)
 
-        # B_mode = 'L'
-        # if opt.output_nc == 3:
-        #     B_mode = 'RGB'
-
-        # img_depth = 0
-        # label = 0
-        # img_path = 0
-        # index = 0
-        # base = 0
-
-        # input_dict = {'r': img_r, 'depth': img_depth, 'path': img_path,
-        #               'index': index, 'name': base, 'label': label}
-
         input_image = img_r.cuda()
         data = net_G(input_image)
+
         image = processed_data_to_img(data)
+
+        image = image.resize(image_size)
 
         return image
 
 
-example_image = Image.open('example.png')
-processed_image = process_image(example_image, opt)
-processed_image.save('example_processed.png')
-print(processed_image)
+# %%
+# --------------------------------------------------------------------------------
+# After everything is OK, start the websocket server
+logger.add('log/informative-drawing-websocket-server.log', rotation='5MB')
+tm = TaskManager(logger)
+
+
+def check_everything_is_ok():
+    # Run at the example image, check if everything is OK
+
+    # 1. Check options
+    logger.info(f'Using option: {opt}')
+    logger.info(f"Using device: {device}")
+
+    # 2. Load the example image
+    path = Path(__file__).parent.joinpath('example.png')
+    image = Image.open(path)
+    logger.debug(f'Loaded example image {image} from path: {path}')
+
+    # 3. Run at the example image
+    processed_image = process_image(image, opt)
+    processed_image.save('example_processed.png')
+    logger.debug(
+        f'Passed example image check. The processed image: {processed_image}')
+
+    # 4. Say hi
+    logger.info('---- BoostingMonocularDepth is running ----')
+    return
+
+
+check_everything_is_ok()
+
+
+async def _handler(websocket: websockets.ServerProtocol):
+    # recv is the bytes of an image
+    recv = await websocket.recv()
+    logger.info(f'Received new request: {recv[:80]}...')
+
+    # Wrap the task with tm: the task manager
+    uid = tm.new_task()
+    try:
+        # Suppose recv is the bytes of an image
+        img_str = io.BytesIO(base64.b64decode(recv))
+        image = Image.open(img_str).convert('RGB')
+        processed_image = process_image(image, opt)
+        tm.task_finished(uid, state='finished')
+    except Exception as err:
+        tm.task_finished(uid, state=f'failed: {err}')
+        logger.error(f'Failed to run task: {err}')
+
+    # Response
+    # Fetch the encoded, it is the bytes of the processed image
+    buffered = io.BytesIO()
+    processed_image.save(buffered, format='JPEG')
+    encoded = base64.b64encode(buffered.getvalue())
+    resp = encoded
+    await websocket.send(resp)
+
+
+async def serve_forever():
+    '''
+    It seems the queued requests are processed one-by-one.
+    '''
+    host = 'localhost'
+    port = 23402
+    async with websockets.serve(_handler, host, port, max_size=None):
+        logger.info(f'Waiting on {host}:{port}...')
+        await asyncio.Future()
+
+
+def main():
+    asyncio.run(serve_forever())
+
+
+if __name__ == "__main__":
+    main()
+    sys.exit(0)

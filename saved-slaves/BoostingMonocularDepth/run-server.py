@@ -37,6 +37,8 @@ from lib.net_tools import strip_prefix_if_present
 from pix2pix.options.test_options import TestOptions
 from pix2pix.models.pix2pix4depth_model import Pix2Pix4DepthModel
 
+sys.path.append(Path(__file__).parent.parent.parent.as_posix())  # noqa
+from slaves.util.task_manager import TaskManager
 
 # %%
 # OUR
@@ -433,7 +435,6 @@ def run(encoded, option):
                                       (input_resolution[1],
                                        input_resolution[0]),
                                       interpolation=cv2.INTER_CUBIC))
-    print(mat)
     res_image.load_from_cv2(mat)
 
     print("finished")
@@ -703,10 +704,12 @@ option = argparse.Namespace(
     max_res=np.inf,
     patch_netsize=896)
 
+
 # %%
 # --------------------------------------------------------------------------------
 # After everything is OK, start the websocket server
 logger.add('log/BoostingMonocularDepth-websocket-server.log', rotation='5MB')
+tm = TaskManager(logger)
 
 
 def check_everything_is_ok():
@@ -727,6 +730,7 @@ def check_everything_is_ok():
     # 3. Run at the example image
     logger.debug(f'Using example inp: {inp}')
     res = run(inp.encoded, option)
+    res.image.save('example-processed.jpg')
     logger.debug(f'Passed example image check. The res.image: {res.image}')
 
     # 4. Say hi
@@ -735,61 +739,6 @@ def check_everything_is_ok():
 
 
 check_everything_is_ok()
-
-
-class TaskManager(object):
-    uid = 0
-    tasks = {}
-    rlock = threading.RLock()
-
-    def __init__(self):
-        pass
-
-    @contextlib.contextmanager
-    def lock(self):
-        try:
-            yield self.rlock.acquire()
-        finally:
-            self.rlock.release()
-
-    def new_task(self, description: str = ''):
-        '''
-        Safely create the new task
-        '''
-        with self.lock():
-            uid = self.uid
-            self.uid += 1
-
-            dct = dict(
-                tic=time.time(),
-                uid=uid,
-                state='running',
-                description=description
-            )
-            self.tasks[uid] = dct
-            logger.debug(f'Created new task: {dct}')
-            return uid
-
-    def task_finished(self, uid, state: str = 'finished'):
-        '''
-        The task of uid finished.
-        Record its running times.
-        '''
-        with self.lock():
-            if uid not in self.tasks:
-                logger.warning(f'Invalid task ID: {uid}')
-                return None
-
-            dct = self.tasks[uid]
-            dct['state'] = state
-            dct['toc'] = time.time()
-            dct['costs'] = dct['toc'] - dct['tic']
-            logger.debug(f'Task finished: {dct}')
-
-            return dct
-
-
-tm = TaskManager()
 
 
 async def _handler(websocket: websockets.ServerProtocol):
@@ -818,7 +767,7 @@ async def serve_forever():
     '''
     host = 'localhost'
     port = 23401
-    async with websockets.serve(_handler, host, port):
+    async with websockets.serve(_handler, host, port, max_size=None):
         logger.info(f'Waiting on {host}:{port}...')
         await asyncio.Future()
 
