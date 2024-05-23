@@ -40,6 +40,14 @@ informative_drawings_websocket_server = AttrDict(
     url='https://github.com/carolineec/informative-drawings'
 )
 
+clip_analysis_websocket_server = AttrDict(
+    host='localhost',
+    port=23403,
+    processing='image-to-array',
+    title='Learning Transferable Visual Models From Natural Language Supervision',
+    url='https://huggingface.co/openai/clip-vit-large-patch14'
+)
+
 # %% ---- 2024-03-07 ------------------------
 # Play ground
 

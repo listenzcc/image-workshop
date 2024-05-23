@@ -33,7 +33,7 @@ from . import logger
 # Function and class
 
 
-def check_is_image(image: Image):
+def check_is_PIL_Image(image: Image):
     """
     Checks if the given object is an instance of the Image class.
 
@@ -63,7 +63,7 @@ def image_to_bytes(image: Image, format: str = 'JPEG') -> bytes:
         >>> encoded_image = image2bytes(image, format='PNG')
     """
 
-    if not check_is_image(image):
+    if not check_is_PIL_Image(image):
         msg = f'Image is required, but get {type(image)}'
         logger.error(msg)
         raise ValueError(msg)

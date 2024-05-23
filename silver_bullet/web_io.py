@@ -19,11 +19,12 @@ Functions:
 # %% ---- 2024-03-07 ------------------------
 # Requirements and constants
 import time
+import pickle
 import asyncio
 import websockets
 
 from . import logger, AttrDict
-from .image import image_to_bytes, bytes_to_image, check_is_image
+from .image import image_to_bytes, bytes_to_image, check_is_PIL_Image
 
 # %%
 example_options = AttrDict(
@@ -105,6 +106,11 @@ class WebsocketClient(object):
         """
         Sends a message to the WebSocket server and waits for a response.
 
+        ! I only send the msg in bytes,
+        ! if it is not, operation is required:
+          - msg is PIL's Image: Encodes the image to bytes using the specified format (JPEG).
+          - msg is something else: Dumps it into bytes.
+
         Args:
             mass: An AttrDict object containing the message to send.
 
@@ -117,9 +123,13 @@ class WebsocketClient(object):
 
         msg = mass.msg
 
-        # Convert to bytes if it is an Image.Image
-        if check_is_image(msg):
+        # Convert to bytes if it is an PIL's Image.Image
+        if check_is_PIL_Image(msg):
             msg = image_to_bytes(msg)
+
+        # Convert to bytes if it is still not a bytes
+        if not isinstance(msg, bytes):
+            msg = pickle.dumps(msg)
 
         async with websockets.connect(self.uri) as ws:
             tic = time.perf_counter()
