@@ -48,6 +48,14 @@ clip_analysis_websocket_server = AttrDict(
     url='https://huggingface.co/openai/clip-vit-large-patch14'
 )
 
+depth_anything_websocket_server = AttrDict(
+    host='localhost',
+    port=23404,
+    processing='image-to-image',
+    title='Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data',
+    url='https://github.com/LiheYoung/Depth-Anything'
+)
+
 # %% ---- 2024-03-07 ------------------------
 # Play ground
 

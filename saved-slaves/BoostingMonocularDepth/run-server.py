@@ -1,18 +1,14 @@
 # %%
 # Module import
 import io
-import os
 import cv2
 import sys
-import time
 import torch
 import base64
 import asyncio
 import argparse
 import warnings
-import threading
 import websockets
-import contextlib
 
 import numpy as np
 
@@ -27,10 +23,9 @@ from loguru import logger
 from operator import getitem
 from torchvision.transforms import Compose
 from torchvision.transforms import transforms
-from utils import ImageandPatchs, ImageDataset, generate_mask, getGF_from_integral, calculate_processing_res, rgb2gray, \
+from utils import ImageandPatchs, generate_mask, getGF_from_integral, calculate_processing_res, rgb2gray, \
     applyGridpatch
 import midas.utils
-from midas.models.midas_net import MidasNet
 from midas.models.transforms import Resize, NormalizeImage, PrepareForNet
 from lib.multi_depth_model_woauxi import RelDepthModel
 from lib.net_tools import strip_prefix_if_present
@@ -734,7 +729,7 @@ def check_everything_is_ok():
     logger.debug(f'Passed example image check. The res.image: {res.image}')
 
     # 4. Say hi
-    logger.info('---- BoostingMonocularDepth is running ----')
+    logger.info('---- BoostingMonocularDepth backend is OK ----')
     return
 
 

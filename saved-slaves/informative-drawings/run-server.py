@@ -2,23 +2,20 @@
 # Module import
 import io
 import os
-import cv2
 import sys
-import time
 import torch
 import base64
 import asyncio
 import warnings
 import argparse
-import threading
 import websockets
-import contextlib
 import numpy as np
 import torchvision.transforms as transforms
 
 from PIL import Image
 from pathlib import Path
 from torchvision.utils import make_grid
+
 from loguru import logger
 
 # Local import
@@ -26,7 +23,6 @@ from model import Generator, GlobalGenerator2, InceptionV3
 from base_dataset import get_params, get_transform
 
 sys.path.append(Path(__file__).parent.parent.parent.as_posix())  # noqa
-print(sys.path)  # noqa
 from slaves.util.task_manager import TaskManager
 
 # --------------------
@@ -176,7 +172,7 @@ def check_everything_is_ok():
         f'Passed example image check. The processed image: {processed_image}')
 
     # 4. Say hi
-    logger.info('---- BoostingMonocularDepth is running ----')
+    logger.info('---- informative-drawing backend is OK ----')
     return
 
 
