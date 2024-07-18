@@ -135,7 +135,7 @@ if __name__ == '__main__':
         input_image.change(fn=process_image_wc4,
                            inputs=input_image, outputs=image_slider_3)
 
-    demo.launch()
+    demo.launch(server_port=7911)
     print('Done.')
 
 # %% ---- 2024-04-12 ------------------------
