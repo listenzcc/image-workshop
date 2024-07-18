@@ -40,7 +40,6 @@ logger.add('log/gradio.log', rotation='5MB')
 # Function and class
 wc_1 = WebsocketClient(host='localhost', port=23401)
 wc_2 = WebsocketClient(host='localhost', port=23402)
-wc_4 = WebsocketClient(host='localhost', port=23404)
 
 
 def get_async_loop():
@@ -58,7 +57,7 @@ def get_async_loop():
     return loop
 
 
-def __process_image(image: Image):
+def process_image(image: Image):
     image = Image.fromarray(image)
     print(image)
 
@@ -99,7 +98,8 @@ def process_image_with_wc(image: Image, wc: WebsocketClient):
 def process_image_wc1(mat: np.ndarray):
     print(mat.shape)
     image = Image.fromarray(mat)
-    return image, process_image_with_wc(image, wc_1)
+    processed_image = process_image_with_wc(image, wc_1)
+    return (image, processed_image), processed_image
 
 
 def process_image_wc2(mat: np.ndarray):
@@ -108,10 +108,12 @@ def process_image_wc2(mat: np.ndarray):
     return image, process_image_with_wc(image, wc_2)
 
 
-def process_image_wc4(mat: np.ndarray):
+def flood_fill(mat: np.ndarray, evt: gr.SelectData):
     print(mat.shape)
     image = Image.fromarray(mat)
-    return image, process_image_with_wc(image, wc_4)
+    x, y = evt.index
+    ImageDraw.floodfill(image, xy=(x, y), value=(255, 255, 0), thresh=50)
+    return image
 
 
 # %% ---- 2024-04-12 ------------------------
@@ -123,19 +125,21 @@ if __name__ == '__main__':
         with gr.Row():
             input_image = gr.Image(label='Input')
 
+            image_slider_1 = ImageSlider(label='Processed 1')
+            image_slider_2 = ImageSlider(label='Processed 2')
+
         with gr.Row():
-            image_slider_1 = ImageSlider(label='Boosting Monocular Depth')
-            image_slider_2 = ImageSlider(label='Line Drawing')
-            image_slider_3 = ImageSlider(label='Depth Anything')
+            image_1 = gr.Image(label='Stereo')
+            image_0 = gr.Image(label='Raw')
 
         input_image.change(fn=process_image_wc1,
-                           inputs=input_image, outputs=image_slider_1)
+                           inputs=input_image, outputs=[image_slider_1, image_1])
         input_image.change(fn=process_image_wc2,
                            inputs=input_image, outputs=image_slider_2)
-        input_image.change(fn=process_image_wc4,
-                           inputs=input_image, outputs=image_slider_3)
 
-    demo.launch(server_port=7911)
+        image_1.select(fn=flood_fill, inputs=image_1, outputs=image_0)
+
+    demo.launch()
     print('Done.')
 
 # %% ---- 2024-04-12 ------------------------
